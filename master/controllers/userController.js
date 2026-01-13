@@ -1,5 +1,6 @@
 const userModel = require('../models/userModel');
 const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
 
 // API to register user
 const registerUser = async (req, res) => {
@@ -41,9 +42,11 @@ const registerUser = async (req, res) => {
         };
 
         const newUser = new userModel(userData);
-        await newUser.save();
+        const user = await newUser.save();
 
-        res.json({ success: true, message: "User Registered Successfully" });
+        const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET);
+
+        res.json({ success: true, token, message: "User Registered Successfully" });
 
     } catch (error) {
         console.log(error);
@@ -51,4 +54,47 @@ const registerUser = async (req, res) => {
     }
 }
 
-module.exports = { registerUser };
+// API for user login
+const loginUser = async (req, res) => {
+    try {
+        const { email, phone, password } = req.body;
+        let user;
+
+        if (email) {
+            // Login with Email and Password
+            user = await userModel.findOne({ email });
+            if (!user) {
+                return res.json({ success: false, message: "User does not exist" });
+            }
+
+            const isMatch = await bcrypt.compare(password, user.password);
+            if (!isMatch) {
+                return res.json({ success: false, message: "Invalid credentials" });
+            }
+        } else if (phone) {
+            // Login with Phone Number (Direct match)
+            user = await userModel.findOne({ phone });
+            if (!user) {
+                return res.json({ success: false, message: "Phone number not registered" });
+            }
+        } else {
+            return res.json({ success: false, message: "Please provide email or phone number" });
+        }
+
+        // Generate Token and respond
+        const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET);
+        res.json({ 
+            success: true, 
+            token, 
+            role: user.role, 
+            name: user.name,
+            message: `login successful, ${user.name}` 
+        });
+
+    } catch (error) {
+        console.log(error);
+        res.json({ success: false, message: error.message });
+    }
+}
+
+module.exports = { registerUser, loginUser };
