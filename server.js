@@ -4,6 +4,10 @@ const cors = require('cors');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
+const connectDB = require('./config/mongodb');
+
+// Connect to Database
+connectDB();
 
 // Middleware
 app.use(cors());
