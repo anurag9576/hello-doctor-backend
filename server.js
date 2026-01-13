@@ -14,6 +14,8 @@ app.use(cors());
 app.use(express.json());
 
 const userRouter = require('./routes/userRoute');
+const patientRouter = require('./routes/patientRoute');
+app.use('/api/user', patientRouter); // Priority to specific patient profile routes
 app.use('/api/user', userRouter);
 
 // Basic Route
