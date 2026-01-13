@@ -1,12 +1,28 @@
 const express = require('express');
-const { registerUser, loginUser } = require('../master/controllers/userController');
+const { registerUser, loginUser, getAllUsers, getUserById } = require('../master/controllers/userController');
 
 const userRouter = express.Router();
 
-// register a new user (Doctor or Patient)
-userRouter.post('/register', registerUser);
+// 1. Static Routes (Ye pehle aane chahiye)
+userRouter.get('/all-users', getAllUsers);
 
-// Login user (Doctor or Patient)
+// Get all doctors
+userRouter.get('/all-doctors', (req, res) => {
+    req.query.role = 'doctor';
+    getAllUsers(req, res);
+});
+
+// Get all patients
+userRouter.get('/all-patients', (req, res) => {
+    req.query.role = 'patient';
+    getAllUsers(req, res);
+});
+
+// Auth Routes
+userRouter.post('/register', registerUser);
 userRouter.post('/login', loginUser);
+
+// 2. Dynamic Routes (Ye sabse neeche hone chahiye)
+userRouter.get('/:id', getUserById);
 
 module.exports = userRouter;
