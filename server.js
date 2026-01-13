@@ -13,6 +13,9 @@ connectDB();
 app.use(cors());
 app.use(express.json());
 
+const userRouter = require('./routes/userRoute');
+app.use('/api/user', userRouter);
+
 // Basic Route
 app.get('/', (req, res) => {
   res.send('HelloDoctor Backend is running!');
