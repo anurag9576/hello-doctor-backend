@@ -24,7 +24,9 @@ const authPatient = async (req, res, next) => {
         
         // Use req.userId to avoid conflicts with profile data in req.body
         req.userId = token_decode.id;
-        req.body.userId = token_decode.id; 
+        if (req.body) {
+            req.body.userId = token_decode.id; 
+        }
         
         next();
 
