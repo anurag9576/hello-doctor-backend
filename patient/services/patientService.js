@@ -1,4 +1,6 @@
 const patientModel = require('../model/patientModel');
+const userModel = require('../../master/models/userModel');
+
 
 /**
  * Helper function to generate a Unique Patient ID (HD-XXXXXX)
@@ -19,7 +21,22 @@ const generateUniquePatientId = async () => {
  * Service to save or update a patient profile
  */
 const saveOrUpdateProfile = async (userId, profileData) => {
+    // Sync with UserMaster if basicInfo is updated
+    if (profileData.basicInfo) {
+        const userUpdateData = {};
+        if (profileData.basicInfo.fullName) userUpdateData.name = profileData.basicInfo.fullName;
+        if (profileData.basicInfo.email) userUpdateData.email = profileData.basicInfo.email;
+        if (profileData.basicInfo.phone) userUpdateData.phone = profileData.basicInfo.phone;
+        if (profileData.basicInfo.dob) userUpdateData.dob = profileData.basicInfo.dob;
+        if (profileData.basicInfo.age) userUpdateData.age = profileData.basicInfo.age;
+
+        if (Object.keys(userUpdateData).length > 0) {
+            await userModel.findByIdAndUpdate(userId, userUpdateData);
+        }
+    }
+
     const updateData = { $set: { userId } };
+
     
     // Set last updated
     if (profileData.metaData) {
