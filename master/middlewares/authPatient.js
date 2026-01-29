@@ -8,8 +8,8 @@ const authPatient = async (req, res, next) => {
                     (req.body && req.body.token) || 
                     req.query.token;
 
-        console.log("Incoming Request:", req.method, req.url);
-        console.log("Token Found:", token ? "Yes" : "No");
+        // console.log("Incoming Request:", req.method, req.url);
+        // console.log("Token Found:", token ? "Yes" : "No");
 
         if (!token) {
             return res.status(401).json({ success: false, message: "Not Authorized. Token Missing" });
