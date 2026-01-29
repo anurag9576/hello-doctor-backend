@@ -60,9 +60,41 @@ const registerUser = async (req, res) => {
             });
         }
 
+        // If user is a doctor, initialize their profile
+        if (role === 'doctor') {
+            const doctorService = require('../../doctor/services/doctorService');
+            await doctorService.saveOrUpdateProfile(user._id, {
+                basicInfo: {
+                    name: name,
+                    specialty: department,
+                    experience: "",
+                    degree: "",
+                    clinic: "",
+                    profileImage: ""
+                }
+            });
+        }
+
         const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET);
 
-        res.status(200).json({ success: true, token, message: "User Registered Successfully" });
+        // Prepare user data response for immediate UI update
+        const userResponseData = {
+            id: user._id,
+            name: user.name,
+            email: user.email,
+            phone: user.phone,
+            role: user.role,
+            dob: user.dob,
+            age: user.age,
+            department: user.department
+        };
+
+        res.status(200).json({ 
+            success: true, 
+            token, 
+            user: userResponseData, 
+            message: "User Registered Successfully" 
+        });
 
     } catch (error) {
         console.log(error);
@@ -112,18 +144,10 @@ const loginUser = async (req, res) => {
             department: user.department
         };
 
-        // If user is a patient, fetch and include their profile
-        let patientProfile = null;
-        if (user.role === 'patient') {
-            const patientService = require('../../patient/services/patientService');
-            patientProfile = await patientService.findProfileByUserId(user._id);
-        }
-
         res.json({ 
             success: true, 
             token, 
             user: userData,
-            profile: patientProfile, // Patient profile data (null for doctors)
             message: "Login successful" 
         });
 
@@ -168,4 +192,34 @@ const getUserById = async (req, res) => {
     }
 }
 
-module.exports = { registerUser, loginUser, getAllUsers, getUserById };
+// API to delete user and its profile
+const removeUser = async (req, res) => {
+    try {
+        const { id } = req.body;
+        
+        const user = await userModel.findById(id);
+        if (!user) {
+            return res.status(404).json({ success: false, message: "User not found" });
+        }
+
+        // Deleting associated profile based on role
+        if (user.role === 'doctor') {
+            const doctorService = require('../../doctor/services/doctorService');
+            await doctorService.deleteProfileByUserId(id);
+        } else if (user.role === 'patient') {
+            const patientService = require('../../patient/services/patientService');
+            await patientService.deleteProfileByUserId(id);
+        }
+
+        // Delete the user from UserMaster
+        await userModel.findByIdAndDelete(id);
+
+        res.json({ success: true, message: "User and associated profile deleted successfully" });
+
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({ success: false, message: error.message });
+    }
+}
+
+module.exports = { registerUser, loginUser, getAllUsers, getUserById, removeUser };

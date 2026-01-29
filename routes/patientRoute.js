@@ -4,17 +4,17 @@ const authPatient = require('../master/middlewares/authPatient');
 
 const patientRouter = express.Router();
 
-// Save or Update Profile (No token required - send userId in body)
-patientRouter.post('/save-profile', savePatientProfile);
+// Save or Update Profile
+patientRouter.post('/save-profile', authPatient, savePatientProfile);
 
-// Explicit Update Profile (No token required - send userId in body)
-patientRouter.post('/update-profile', savePatientProfile);
+// Explicit Update Profile
+patientRouter.post('/update-profile', authPatient, savePatientProfile);
 
-// Get Profile (No token required - send userId in body or query)
-patientRouter.get('/get-profile', getPatientProfile);
+// Get Profile
+patientRouter.get('/get-profile', authPatient, getPatientProfile);
 
-// Delete Profile (No token required - send userId in body)
-patientRouter.post('/delete-profile', deletePatientProfile);
+// Delete Profile
+patientRouter.post('/delete-profile', authPatient, deletePatientProfile);
 
 // Get all profiles
 patientRouter.get('/all-profiles', getAllProfiles);

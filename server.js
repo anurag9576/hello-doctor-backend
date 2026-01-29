@@ -15,8 +15,11 @@ app.use(express.json());
 
 const userRouter = require('./routes/userRoute');
 const patientRouter = require('./routes/patientRoute');
-app.use('/api/user', patientRouter); // Priority to specific patient profile routes
+const doctorRouter = require('./routes/doctorRoute');
+
 app.use('/api/user', userRouter);
+app.use('/api/patient', patientRouter);
+app.use('/api/doctor', doctorRouter);
 
 // Basic Route
 app.get('/', (req, res) => {
