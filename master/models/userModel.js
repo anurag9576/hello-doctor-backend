@@ -24,6 +24,27 @@ const userSchema = new mongoose.Schema({
     }
 }, { minimize: false, timestamps: true });
 
+// Post middleware to handle cascading delete
+userSchema.post('findOneAndDelete', async function (doc) {
+    if (doc) {
+        const userId = doc._id;
+        try {
+            if (doc.role === 'doctor') {
+                // Using mongoose.model to avoid circular dependency if possible
+                const doctorModel = mongoose.models.doctorprofile || mongoose.model('doctorprofile');
+                await doctorModel.findOneAndDelete({ userId });
+                console.log(`Cascading delete: Removed doctor profile for userId ${userId}`);
+            } else if (doc.role === 'patient') {
+                const patientModel = mongoose.models.patientprofile || mongoose.model('patientprofile');
+                await patientModel.findOneAndDelete({ userId });
+                console.log(`Cascading delete: Removed patient profile for userId ${userId}`);
+            }
+        } catch (error) {
+            console.error(`Error in cascading delete for userId ${userId}:`, error);
+        }
+    }
+});
+
 const userModel = mongoose.models.user || mongoose.model('usermaster', userSchema);
 
 module.exports = userModel;

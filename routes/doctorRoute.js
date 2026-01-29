@@ -1,5 +1,5 @@
 const express = require('express');
-const { saveDoctorProfile, getDoctorProfile, getAllDoctorProfiles } = require('../doctor/controller/doctorController');
+const { saveDoctorProfile, getDoctorProfile, getAllDoctorProfiles, deleteDoctorProfile } = require('../doctor/controller/doctorController');
 const authUser = require('../master/middlewares/authPatient');
 
 const doctorRouter = express.Router();
@@ -9,5 +9,6 @@ doctorRouter.post('/update-profile', authUser, saveDoctorProfile); // Explicit u
 doctorRouter.get('/get-profile', authUser, getDoctorProfile); // Works with query param ?userId=...
 doctorRouter.get('/profile/:userId', getDoctorProfile); // Works with path param /profile/...
 doctorRouter.get('/all-profiles', getAllDoctorProfiles);
+doctorRouter.post('/delete-profile', deleteDoctorProfile);
 
 module.exports = doctorRouter;

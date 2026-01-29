@@ -1,5 +1,6 @@
-const doctorModel = require('../model/doctorModel');
 const userModel = require('../../master/models/userModel');
+const doctorModel = require('../model/doctorModel');
+
 
 /**
  * Service to save or update a doctor profile
@@ -55,8 +56,16 @@ const findAllProfiles = async () => {
     return await doctorModel.find({}).populate('userId', 'name email phone role department');
 }
 
+/**
+ * Service to delete a doctor profile by userId
+ */
+const deleteProfileByUserId = async (userId) => {
+    return await doctorModel.findOneAndDelete({ userId });
+}
+
 module.exports = {
     saveOrUpdateProfile,
     findProfileByUserId,
-    findAllProfiles
+    findAllProfiles,
+    deleteProfileByUserId
 };

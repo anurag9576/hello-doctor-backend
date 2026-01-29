@@ -72,7 +72,7 @@ const saveOrUpdateProfile = async (userId, profileData) => {
         { userId },
         updateData,
         { new: true, upsert: true, runValidators: true }
-    ).populate('userId', 'name email phone dob');
+    ).populate('userId', 'name email phone dob age');
 }
 
 /**
@@ -87,7 +87,7 @@ const deleteProfileByUserId = async (userId) => {
 }
 
 const findAllProfiles = async () => {
-    return await patientModel.find({}).populate('userId', 'name email phone dob');
+    return await patientModel.find({}).populate('userId', 'name email phone dob age');
 }
 
 module.exports = {

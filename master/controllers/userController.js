@@ -77,7 +77,24 @@ const registerUser = async (req, res) => {
 
         const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET);
 
-        res.status(200).json({ success: true, token, message: "User Registered Successfully" });
+        // Prepare user data response for immediate UI update
+        const userResponseData = {
+            id: user._id,
+            name: user.name,
+            email: user.email,
+            phone: user.phone,
+            role: user.role,
+            dob: user.dob,
+            age: user.age,
+            department: user.department
+        };
+
+        res.status(200).json({ 
+            success: true, 
+            token, 
+            user: userResponseData, 
+            message: "User Registered Successfully" 
+        });
 
     } catch (error) {
         console.log(error);
@@ -175,4 +192,34 @@ const getUserById = async (req, res) => {
     }
 }
 
-module.exports = { registerUser, loginUser, getAllUsers, getUserById };
+// API to delete user and its profile
+const removeUser = async (req, res) => {
+    try {
+        const { id } = req.body;
+        
+        const user = await userModel.findById(id);
+        if (!user) {
+            return res.status(404).json({ success: false, message: "User not found" });
+        }
+
+        // Deleting associated profile based on role
+        if (user.role === 'doctor') {
+            const doctorService = require('../../doctor/services/doctorService');
+            await doctorService.deleteProfileByUserId(id);
+        } else if (user.role === 'patient') {
+            const patientService = require('../../patient/services/patientService');
+            await patientService.deleteProfileByUserId(id);
+        }
+
+        // Delete the user from UserMaster
+        await userModel.findByIdAndDelete(id);
+
+        res.json({ success: true, message: "User and associated profile deleted successfully" });
+
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({ success: false, message: error.message });
+    }
+}
+
+module.exports = { registerUser, loginUser, getAllUsers, getUserById, removeUser };

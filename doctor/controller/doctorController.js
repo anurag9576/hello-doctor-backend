@@ -34,7 +34,6 @@ const saveDoctorProfile = async (req, res) => {
 // API to get doctor profile
 const getDoctorProfile = async (req, res) => {
     try {
-        // userId can be passed as path param, query param, or in body, or extracted from token
         const userId = req.userId || req.params.userId || req.query.userId || req.body.userId;
         
         if (!userId) {
@@ -44,12 +43,26 @@ const getDoctorProfile = async (req, res) => {
         let profile = await doctorService.findProfileByUserId(userId);
         
         if (!profile) {
-            return res.status(404).json({ success: false, message: "Doctor profile not found" });
+            // Check if user exists in master and is a doctor
+            const userModel = require('../../master/models/userModel');
+            const user = await userModel.findById(userId);
+            
+            if (user && user.role === 'doctor') {
+                // Auto-initialize profile if missing
+                profile = await doctorService.saveOrUpdateProfile(userId, {
+                    basicInfo: {
+                        name: user.name,
+                        specialty: user.department || "General",
+                    }
+                });
+            } else {
+                return res.status(404).json({ success: false, message: "Doctor profile not found" });
+            }
         }
 
         res.json({
             success: true,
-            profile: profile // Returning as 'profile' key
+            profile: profile
         });
 
     } catch (error) {
@@ -69,4 +82,26 @@ const getAllDoctorProfiles = async (req, res) => {
     }
 }
 
-module.exports = { saveDoctorProfile, getDoctorProfile, getAllDoctorProfiles };
+// API to delete doctor profile
+const deleteDoctorProfile = async (req, res) => {
+    try {
+        const { userId } = req.body;
+        
+        if (!userId) {
+            return res.status(400).json({ success: false, message: "userId is required" });
+        }
+
+        const deletedProfile = await doctorService.deleteProfileByUserId(userId);
+        if (!deletedProfile) {
+            return res.status(404).json({ success: false, message: "Profile not found" });
+        }
+
+        res.json({ success: true, message: "Doctor Profile Deleted Successfully" });
+
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({ success: false, message: error.message });
+    }
+}
+
+module.exports = { saveDoctorProfile, getDoctorProfile, getAllDoctorProfiles, deleteDoctorProfile };

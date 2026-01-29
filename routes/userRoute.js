@@ -1,5 +1,5 @@
 const express = require('express');
-const { registerUser, loginUser, getAllUsers, getUserById } = require('../master/controllers/userController');
+const { registerUser, loginUser, getAllUsers, getUserById, removeUser } = require('../master/controllers/userController');
 
 const userRouter = express.Router();
 
@@ -23,6 +23,7 @@ userRouter.post('/register', registerUser);
 userRouter.post('/login', loginUser);
 
 // 2. Dynamic Routes (Ye sabse neeche hone chahiye)
+userRouter.post('/delete-user', removeUser);
 userRouter.get('/:id', getUserById);
 
 module.exports = userRouter;

@@ -3,6 +3,7 @@ const mongoose = require('mongoose');
 const doctorSchema = new mongoose.Schema({
     userId: { type: mongoose.Schema.Types.ObjectId, ref: 'usermaster', required: true, unique: true },
     
+    
     basicInfo: {
         name: { type: String, required: true },
         specialty: { type: String },
