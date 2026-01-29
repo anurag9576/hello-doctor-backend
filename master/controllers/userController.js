@@ -60,6 +60,21 @@ const registerUser = async (req, res) => {
             });
         }
 
+        // If user is a doctor, initialize their profile
+        if (role === 'doctor') {
+            const doctorService = require('../../doctor/services/doctorService');
+            await doctorService.saveOrUpdateProfile(user._id, {
+                basicInfo: {
+                    name: name,
+                    specialty: department,
+                    experience: "",
+                    degree: "",
+                    clinic: "",
+                    profileImage: ""
+                }
+            });
+        }
+
         const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET);
 
         res.status(200).json({ success: true, token, message: "User Registered Successfully" });
@@ -112,18 +127,10 @@ const loginUser = async (req, res) => {
             department: user.department
         };
 
-        // If user is a patient, fetch and include their profile
-        let patientProfile = null;
-        if (user.role === 'patient') {
-            const patientService = require('../../patient/services/patientService');
-            patientProfile = await patientService.findProfileByUserId(user._id);
-        }
-
         res.json({ 
             success: true, 
             token, 
             user: userData,
-            profile: patientProfile, // Patient profile data (null for doctors)
             message: "Login successful" 
         });
 

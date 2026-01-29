@@ -30,8 +30,8 @@ const savePatientProfile = async (req, res) => {
 // API to get patient profile
 const getPatientProfile = async (req, res) => {
     try {
-        // Accept userId from query params (for GET) or body (for POST)
-        const userId = req.query.userId || req.body.userId;
+        // Accept userId from query params, body, or from the auth middleware
+        const userId = req.userId || req.query.userId || req.body.userId;
         
         if (!userId) {
             return res.status(400).json({ success: false, message: "userId is required" });
