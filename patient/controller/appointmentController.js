@@ -4,7 +4,7 @@ const Notification = require('../../doctor/model/notificationModel');
 // Book a new appointment
 exports.bookAppointment = async (req, res) => {
   try {
-    const userId = req.user ? req.user.id : req.body.patientId;
+    const userId = req.userId || req.user?.id || req.body?.patientId;
     if (!userId) {
       return res.status(401).json({ success: false, message: 'Unauthorized' });
     }
@@ -71,7 +71,10 @@ exports.bookAppointment = async (req, res) => {
 // Get all appointments for a patient
 exports.getPatientAppointments = async (req, res) => {
   try {
-    const userId = req.user.id;
+    const userId = req.userId || req.user?.id || req.query?.userId || req.query?.patientId;
+    if (!userId) {
+      return res.status(401).json({ success: false, message: 'Unauthorized: Patient ID not found' });
+    }
     const appointments = await BookAppointment.find({ patientId: userId }).sort({ createdAt: -1 });
     res.json({ success: true, appointments });
   } catch (error) {
@@ -83,7 +86,10 @@ exports.getPatientAppointments = async (req, res) => {
 // Get all appointments for a doctor
 exports.getDoctorAppointments = async (req, res) => {
   try {
-    const doctorId = req.user.id;
+    const doctorId = req.userId || req.user?.id || req.query?.doctorId || req.query?.userId;
+    if (!doctorId) {
+      return res.status(401).json({ success: false, message: 'Unauthorized: Doctor ID not found' });
+    }
     const appointments = await BookAppointment.find({ doctorId }).sort({ createdAt: -1 });
     res.json({ success: true, appointments });
   } catch (error) {

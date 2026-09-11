@@ -22,8 +22,9 @@ const authPatient = async (req, res, next) => {
 
         const token_decode = jwt.verify(token, process.env.JWT_SECRET);
         
-        // Use req.userId to avoid conflicts with profile data in req.body
+        // Set req.userId and req.user to ensure compatibility across controllers
         req.userId = token_decode.id;
+        req.user = typeof token_decode === 'object' ? { ...token_decode, id: token_decode.id } : { id: token_decode.id };
         if (req.body) {
             req.body.userId = token_decode.id; 
         }
