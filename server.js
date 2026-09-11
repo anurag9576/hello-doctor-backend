@@ -3,6 +3,7 @@ const express = require('express');
 const cors = require('cors');
 
 const app = express();
+app.disable('x-powered-by');
 const PORT = process.env.PORT || 5000;
 const connectDB = require('./config/mongodb');
 
@@ -10,7 +11,25 @@ const connectDB = require('./config/mongodb');
 connectDB();
 
 // Middleware
-app.use(cors());
+const allowedOrigins = process.env.ALLOWED_ORIGINS
+  ? process.env.ALLOWED_ORIGINS.split(',').map((origin) => origin.trim())
+  : ['http://localhost:3000', 'http://localhost:5173', 'http://localhost:8081'];
+
+const corsOptions = {
+  origin: (origin, callback) => {
+    // Allow requests with no origin (like mobile apps, curl, Postman) or whitelisted origins
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true,
+};
+
+app.use(cors(corsOptions));
 app.use(express.json());
 
 const userRouter = require('./routes/userRoute');

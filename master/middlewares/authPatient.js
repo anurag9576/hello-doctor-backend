@@ -3,10 +3,10 @@ const jwt = require('jsonwebtoken');
 const authPatient = async (req, res, next) => {
     try {
         // Safely extract token from headers, body, or query params
-        let token = req.headers.token || 
-                    req.headers.authorization || 
-                    (req.body && req.body.token) || 
-                    req.query.token;
+        let token = req.headers?.token || 
+                    req.headers?.authorization || 
+                    req.body?.token || 
+                    req.query?.token;
 
         // console.log("Incoming Request:", req.method, req.url);
         // console.log("Token Found:", token ? "Yes" : "No");

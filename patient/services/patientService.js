@@ -1,3 +1,4 @@
+const crypto = require('node:crypto');
 const patientModel = require('../model/patientModel');
 const userModel = require('../../master/models/userModel');
 
@@ -9,7 +10,7 @@ const generateUniquePatientId = async () => {
     let patientId;
     let isUnique = false;
     while (!isUnique) {
-        const randomDigits = Math.floor(100000 + Math.random() * 900000);
+        const randomDigits = crypto.randomInt(100000, 1000000);
         patientId = `HD-${randomDigits}`;
         const existingPatient = await patientModel.findOne({ patientId });
         if (!existingPatient) isUnique = true;
@@ -18,54 +19,85 @@ const generateUniquePatientId = async () => {
 }
 
 /**
+ * Sync user model with basic info changes
+ */
+const syncUserBasicInfo = async (userId, basicInfo) => {
+    if (!basicInfo) return;
+
+    const userFieldMap = {
+        fullName: 'name',
+        email: 'email',
+        phone: 'phone',
+        dob: 'dob',
+        age: 'age',
+    };
+
+    const userUpdateData = {};
+    for (const [key, targetField] of Object.entries(userFieldMap)) {
+        if (basicInfo[key]) {
+            userUpdateData[targetField] = basicInfo[key];
+        }
+    }
+
+    if (Object.keys(userUpdateData).length > 0) {
+        await userModel.findByIdAndUpdate(userId, userUpdateData);
+    }
+};
+
+/**
+ * Assign an existing or new unique patient ID to the update object
+ */
+const assignPatientId = async (userId, patientId, updateSet) => {
+    if (patientId) {
+        updateSet.patientId = patientId;
+        return;
+    }
+
+    const existing = await patientModel.findOne({ userId });
+    if (!existing?.patientId) {
+        updateSet.patientId = await generateUniquePatientId();
+    }
+};
+
+/**
+ * Build dot-notation update map for nested sections to avoid overwriting entire objects
+ */
+const buildSectionUpdates = (profileData) => {
+    const sections = ['basicInfo', 'emergencyContact', 'medicalInfo', 'currentHealth', 'lifestyle', 'insurance', 'metaData'];
+    const updates = {};
+
+    for (const section of sections) {
+        const sectionData = profileData[section];
+        if (sectionData) {
+            for (const [key, value] of Object.entries(sectionData)) {
+                updates[`${section}.${key}`] = value;
+            }
+        }
+    }
+    return updates;
+};
+
+/**
  * Service to save or update a patient profile
  */
 const saveOrUpdateProfile = async (userId, profileData) => {
     // Sync with UserMaster if basicInfo is updated
-    if (profileData.basicInfo) {
-        const userUpdateData = {};
-        if (profileData.basicInfo.fullName) userUpdateData.name = profileData.basicInfo.fullName;
-        if (profileData.basicInfo.email) userUpdateData.email = profileData.basicInfo.email;
-        if (profileData.basicInfo.phone) userUpdateData.phone = profileData.basicInfo.phone;
-        if (profileData.basicInfo.dob) userUpdateData.dob = profileData.basicInfo.dob;
-        if (profileData.basicInfo.age) userUpdateData.age = profileData.basicInfo.age;
+    await syncUserBasicInfo(userId, profileData.basicInfo);
 
-        if (Object.keys(userUpdateData).length > 0) {
-            await userModel.findByIdAndUpdate(userId, userUpdateData);
-        }
-    }
-
-    const updateData = { $set: { userId } };
-
-    
     // Set last updated
-    if (profileData.metaData) {
-        profileData.metaData.lastUpdated = new Date().toISOString();
-    } else {
-        profileData.metaData = { lastUpdated: new Date().toISOString() };
-    }
+    profileData.metaData = {
+        ...profileData.metaData,
+        lastUpdated: new Date().toISOString(),
+    };
 
-    // Handle nested objects by using dot notation to avoid overwriting entire objects
-    const sections = ['basicInfo', 'emergencyContact', 'medicalInfo', 'currentHealth', 'lifestyle', 'insurance', 'metaData'];
-    
-    sections.forEach(section => {
-        if (profileData[section]) {
-            Object.keys(profileData[section]).forEach(key => {
-                updateData.$set[`${section}.${key}`] = profileData[section][key];
-            });
-        }
-    });
+    const updateData = {
+        $set: {
+            userId,
+            ...buildSectionUpdates(profileData),
+        },
+    };
 
-    // Handle top-level fields
-    if (profileData.patientId) updateData.$set.patientId = profileData.patientId;
-
-    // Generate patientId if missing and not provided
-    if (!profileData.patientId) {
-        const existing = await patientModel.findOne({ userId });
-        if (!existing || !existing.patientId) {
-            updateData.$set.patientId = await generateUniquePatientId();
-        }
-    }
+    await assignPatientId(userId, profileData.patientId, updateData.$set);
 
     // Find and update or create a new profile (upsert)
     return await patientModel.findOneAndUpdate(
@@ -73,7 +105,7 @@ const saveOrUpdateProfile = async (userId, profileData) => {
         updateData,
         { new: true, upsert: true, runValidators: true }
     ).populate('userId', 'name email phone dob age');
-}
+};
 
 /**
  * Service to find a patient profile by userId and merge UserMaster data

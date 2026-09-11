@@ -1,6 +1,6 @@
 const mongoose = require('mongoose');
 const dotenv = require('dotenv');
-const path = require('path');
+const path = require('node:path');
 dotenv.config({ path: path.join(__dirname, '.env') });
 
 const fix = async () => {
@@ -15,8 +15,8 @@ const fix = async () => {
         const indexes = await collection.indexes();
         console.log('Current indexes:', JSON.stringify(indexes, null, 2));
 
-        const doctorIdIndex = indexes.find(idx => idx.name === 'doctorId_1');
-        if (doctorIdIndex) {
+        const hasDoctorIdIndex = indexes.some(idx => idx.name === 'doctorId_1');
+        if (hasDoctorIdIndex) {
             console.log('Found problematic index doctorId_1. Dropping it...');
             await collection.dropIndex('doctorId_1');
             console.log('Index doctorId_1 dropped successfully.');
