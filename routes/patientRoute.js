@@ -19,4 +19,9 @@ patientRouter.post('/delete-profile', authPatient, deletePatientProfile);
 // Get all profiles
 patientRouter.get('/all-profiles', getAllProfiles);
 
+// Appointment routes
+const { bookAppointment, getPatientAppointments } = require('../patient/controller/appointmentController');
+patientRouter.post('/book-appointment', authPatient, bookAppointment);
+patientRouter.get('/appointments', authPatient, getPatientAppointments);
+
 module.exports = patientRouter;
